@@ -1,5 +1,6 @@
 # Ignore some files from the installation/demo
 office_loop/
+recv_images/
 gtsam_with_sl4/
 gtsam/
 salad/

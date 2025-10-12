@@ -2,6 +2,11 @@ import os
 import glob
 import argparse
 
+import cv2
+import socket
+import struct
+import pickle
+
 import numpy as np
 import torch
 from tqdm.auto import tqdm
@@ -34,9 +39,6 @@ parser.add_argument("--vis_stride", type=int, default=1, help="Stride interval i
 parser.add_argument("--vis_point_size", type=float, default=0.003, help="Visualization point size")
 
 def main():
-    """
-    Main function that wraps the entire pipeline of VGGT-SLAM.
-    """
     args = parser.parse_args()
     use_optical_flow_downsample = True
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -61,9 +63,65 @@ def main():
     model.eval()
     model = model.to(device)
 
+
+
+    #Receive frames
+    HOST = '0.0.0.0'
+    PORT = 9999
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
+    print(f"Listening for video stream on {HOST}:{PORT}...")
+
+    conn, addr = server_socket.accept()
+    print(f"Connected by {addr}")
+
+    data = b""
+    payload_size = struct.calcsize("Q")
+
+    # We'll set up VideoWriter after getting the first frame
+    c=0
+    while True:
+        break
+    # Wait until we have the message size
+        while len(data) < payload_size:
+            packet = conn.recv(4*1024)
+            if not packet:
+                break
+            data += packet
+        if not data:
+            break
+
+        packed_msg_size = data[:payload_size]
+        data = data[payload_size:]
+        msg_size = struct.unpack("Q", packed_msg_size)[0]
+
+        while len(data) < msg_size:
+            data += conn.recv(4*1024)
+
+        frame_data = data[:msg_size]
+        data = data[msg_size:]
+
+        frame = cv2.imdecode(pickle.loads(frame_data), cv2.IMREAD_COLOR)
+        cv2.imwrite(f"recv_images/frame{str(c).rjust(4, '0')}.jpg", frame)
+        c += 1
+
+    print("Stream ended. Saving file...")
+
+    conn.close()
+    server_socket.close()
+    print("Connection closed. Video saved successfully.")
+
+
+    """
+    Main function that wraps the entire pipeline of VGGT-SLAM.
+    """
+
+
     # Use the provided image folder path
-    print(f"Loading images from {args.image_folder}...")
-    image_names = [f for f in glob.glob(os.path.join(args.image_folder, "*")) 
+    #print(f"Loading images from {args.image_folder}...")
+    image_names = [f for f in glob.glob(os.path.join("recv_images", "*")) 
                if "depth" not in os.path.basename(f).lower() and "txt" not in os.path.basename(f).lower() 
                and "db" not in os.path.basename(f).lower()]
 

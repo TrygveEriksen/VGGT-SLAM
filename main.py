@@ -64,56 +64,6 @@ def main():
     model = model.to(device)
 
 
-
-    #Receive frames
-    HOST = '0.0.0.0'
-    PORT = 9999
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((HOST, PORT))
-    server_socket.listen(1)
-    print(f"Listening for video stream on {HOST}:{PORT}...")
-
-    conn, addr = server_socket.accept()
-    print(f"Connected by {addr}")
-
-    data = b""
-    payload_size = struct.calcsize("Q")
-
-    # We'll set up VideoWriter after getting the first frame
-    c=0
-    while True:
-        break
-    # Wait until we have the message size
-        while len(data) < payload_size:
-            packet = conn.recv(4*1024)
-            if not packet:
-                break
-            data += packet
-        if not data:
-            break
-
-        packed_msg_size = data[:payload_size]
-        data = data[payload_size:]
-        msg_size = struct.unpack("Q", packed_msg_size)[0]
-
-        while len(data) < msg_size:
-            data += conn.recv(4*1024)
-
-        frame_data = data[:msg_size]
-        data = data[msg_size:]
-
-        frame = cv2.imdecode(pickle.loads(frame_data), cv2.IMREAD_COLOR)
-        cv2.imwrite(f"recv_images/frame{str(c).rjust(4, '0')}.jpg", frame)
-        c += 1
-
-    print("Stream ended. Saving file...")
-
-    conn.close()
-    server_socket.close()
-    print("Connection closed. Video saved successfully.")
-
-
     """
     Main function that wraps the entire pipeline of VGGT-SLAM.
     """

@@ -171,3 +171,9 @@ dmypy.json
 **/tmp/
 **/outputs/skyseg.onnx
 skyseg.onnx
+
+# Ignore video files
+*.mov
+*.MOV
+*.mp4
+*.MP4
